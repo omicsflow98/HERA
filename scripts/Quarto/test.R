@@ -20,6 +20,17 @@ if (genestate) {
 }
 
 
+count_snps_in_regions <- function(regions, snps) {
+  snps %>%
+    select(CHR, POS) %>%
+    inner_join(
+      distinct(regions, CHR, POS1, POS2),
+      by = join_by(CHR, between(POS, POS1, POS2))
+    ) %>%
+    count(CHR, POS1, POS2, name = "snp_count")
+}
+
+
 if (hom) {
   ROHfile <- read.table(homfile, sep = "\t", fill = TRUE, header = TRUE) %>%
     arrange(as.integer(sub("ROH_", "", ROH_ID)))
@@ -56,9 +67,7 @@ if (hom) {
 
   plot_ROHislands <- prepHOMtable %>%
     filter(samples > cutoff) %>%
-    inner_join(ROHislands, by = "CHR") %>%
-    filter(POS >= POS1 & POS <= POS2) %>%
-    count(CHR,POS1,POS2, name = "snp_count") %>%
+    count_snps_in_regions(ROHislands) %>%
     filter(snp_count >= as.integer(minsnp)) %>%
     inner_join(prepHOMtable, by = c("CHR", "POS1", "POS2"))
 
@@ -175,12 +184,10 @@ if (het) {
   prepHETtable$CHR <- as.character(prepHETtable$CHR)
 
   plot_HRRislands <- prepHETtable %>%
-  filter(samples >= cutoff) %>%
-  inner_join(HRRislands, by = "CHR") %>%
-  filter(POS >= POS1 & POS <= POS2) %>%
-  count(CHR,POS1,POS2, name = "snp_count") %>%
-  filter(snp_count >= as.integer(minsnp)) %>%
-  inner_join(prepHETtable, by = c("CHR", "POS1", "POS2"))
+    filter(samples >= cutoff) %>%
+    count_snps_in_regions(HRRislands) %>%
+    filter(snp_count >= as.integer(minsnp)) %>%
+    inner_join(prepHETtable, by = c("CHR", "POS1", "POS2"))
 
   if (genestate) {
     plot_HRRislands <- select(plot_HRRislands, HRR_ID, POS1, POS2, samples, CHR, KB, NSNP, genes)
