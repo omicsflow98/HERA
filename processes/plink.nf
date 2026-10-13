@@ -97,12 +97,34 @@ process plinkhet {
         val(chrom), emit: chromosome
 
         script:
-        def prefix = bim.toString().replace('.bim', '')
+
         def cleanname = task.process.split(':')[-1]
+        def command
+        def stage = ""
+
+        if (type == 'VCF') {
+          command = "--vcf ${vcf}"
+          make_bed = true
+        } else {
+          command = "--bfile plink"
+          make_bed = false
+
+          def link = { f, ext ->
+            f.toString() == "plink.${ext}" ? "" : "ln -s ${f} plink.${ext}"
+          }
+
+          stage = [
+            link(bed, 'bed'),
+            link(bim, 'bim'),
+            link(fam, 'fam')
+            ].findAll { it }.join(' && ')
+        }
 
         """
+        ${stage}
+        
         plink \
-        --bfile ${prefix} \
+        ${command} \
         --chr ${chrom} \
         --chr-set 35 \
         --recode \
