@@ -12,7 +12,7 @@ process plink {
 
         output:
         path("plink.*"), emit: plink_files
-        path(bim), emit: bim_file
+        path("plink.bim"), emit: bim_file
         path("plink.hom"), emit: roh_file
         val(chrom), emit: chromosome
         tuple path("plink.map"), path("plink.ped"), emit: dr_files
@@ -23,18 +23,28 @@ process plink {
         def cleanname = task.process.split(':')[-1]
         def command
         def make_bed
+        def stage = ""
 
         if (type == 'VCF') {
           command = "--vcf ${vcf}"
           make_bed = true
         } else {
-          def prefix = bim.toString().replace('.bim', '')
-          command = "--bfile ${prefix}"
+          command = "--bfile plink"
           make_bed = false
+
+          def link = { f, ext ->
+            f.toString() == "plink.${ext}" ? "" : "ln -s ${f} plink.${ext}"
+          }
+
+          stage = [
+            link(bed, 'bed'),
+            link(bim, 'bim'),
+            link(fam, 'fam')
+            ].findAll { it }.join(' && ')
         }
 
         """
-        cut -f1 ${bim} | uniq > chr-map.txt
+        ${stage}
 
         plink \
         ${command} \
@@ -56,6 +66,8 @@ process plink {
         --recode \
         --threads 2 \
         --out plink
+
+        cut -f1 plink.bim | uniq > chr-map.txt
 
         cat <<-EOF > ${task.process}_versions.yml
         Process version:
