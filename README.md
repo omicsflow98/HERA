@@ -12,10 +12,6 @@ We present HERA (HRR and ROH Exploration and Annotation), a scalable, reproducib
 
 An overview of the steps involved in the HERA pipeline alongside required software is shown below.
 
-### Quality control
-
-- **Filter_vcf:** Filter VCF using BCFtools
-
 ### ROH/HRR identification and annotation
 
 - **Characterize ROH:** using PLINK
