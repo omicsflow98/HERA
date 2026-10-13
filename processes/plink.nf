@@ -106,6 +106,7 @@ process plinkhet {
         --chr ${chrom} \
         --chr-set 35 \
         --recode \
+        --allow-extra-chr \
         --out plink
 
         cat <<-EOF > ${task.process}_versions.yml
