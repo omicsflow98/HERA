@@ -152,7 +152,7 @@ workflow {
         plinkhet_map = plinkhet(infile, chroms)
         plinkhet_version = plinkhet_map.version.collect().map{ it[0] }
 
-        if (params.inputfiles.start_vcf) {
+        if (params.inputfiles.filetype == "vcf") {
             make_bim = plinkhetbim(infile, plink_params, "")
         } else {
             make_bim = [ bim_file: file("${prefix}.bim") ]

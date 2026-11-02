@@ -5,14 +5,13 @@ main:
 
 # Input files can either be a well-filtered VCF file or plink output files (bed/bim/fam)
 inputfiles:
-  start_vcf: false  # Set to true if you are starting with a VCF file instead of plink files
-  vcf_file: /Absolute/path/to/vcf/file.vcf # Path to the input VCF file (only required if start_vcf is true)
-  plink_file: /Absolute/path/to/plink/files  # Path to bed/bim/fam files alongside prefx name (only required if start_vcf is false)
+  filetype: vcf  # Set to either vcf, plink, or rohan
+  file: /Absolute/Path/to/input/file # Path to the input file (.vcf file for VCF input, .bed/.bim/.fam file prefix for plink input, or the path to the directory containing the hmmrohl files outputted by ROHan)
 
 # Only needed if running pipeline using SLURM cluster (i.e if you are using -profile slurm)
 slurm:
-  account: aafc_aac
-  email: mohamadelian1996@gmail.com
+  account: SLURM_account_name
+  email: email_for_notifications
 
 # Only needed if apptainer is set to true
 # Containers should be specified and contain the required software for each process. If a process does not require any software, set to null

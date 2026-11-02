@@ -18,9 +18,7 @@ island:
 
 #only needed if genes is set to true
 genes:
-  genefile: gtf  #file containing gene information (gtf or bed)
-  gtf: /Absolute/path/to/sheep.gtf #gtf file containing gene information
-  bed: /Absolute/path/to/genes.bed # bed file containing gene information
+  file: absolute/path/to/gff3/or/gtf/or/bed/file #file containing gene information
 
 # settings for plink process
 plink:
