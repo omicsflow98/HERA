@@ -16,6 +16,7 @@ workflow ROH {
 	bed_file
 	state
 	genes_enabled
+	filetype
 
 	main:
 
@@ -25,6 +26,7 @@ workflow ROH {
 	fix_script = file("${projectDir}/scripts/fixROH.R")
 	topsnp_script = file("${projectDir}/scripts/topsnp.py")
 	overlap_version = channel.empty()
+
 	island_info = channel.value(
 		tuple(
 			params.island.type,
@@ -44,18 +46,24 @@ workflow ROH {
 			| collect
 			| set { all_tsvs }
 		combine_overlap_map = combine_overlap(all_tsvs, chromosomes)
-		islands = snpislands(combine_overlap_map.ROH_file, bim_file)
 
 	} else {
 		combine_overlap_map = combine_overlap(collected_tsvs, chromosomes)
+	}
+
+	if (filetype != "rohan") {
 		islands = snpislands(combine_overlap_map.ROH_file, bim_file)
+		island_version = islands.snpislands_version
+		topislands = topsnp(state, topsnp_script, islands.snpcount, island_info)
+		topsnps_version = topislands.topsnps_version
+		finalislands = topislands.topsnps
+	} else {
+		finalislands = channel.value(file(chromosomes))
+		topsnps_version = channel.empty()
+		island_version = channel.empty()
 	}
 
 	splitROH_map = splitROH(split_script, combine_overlap_map.ROH_file, state, genome)
-	topislands = topsnp(state, topsnp_script, islands.snpcount, island_info)
-	topversion = topislands.topsnps_version
-	finalislands = topislands.topsnps
-
 	indiv_info = splitROH_map.indiv_file
 
 	splitROH_map.split_tsv
@@ -74,11 +82,11 @@ workflow ROH {
 
 	ROH_results = merge_map.tsv_file
 
-	version_info = topversion
+	version_info = fixROH_version
 		| combine(combine_overlap_map.combineOL_version)
 		| combine(splitROH_map.splitROH_version)
-		| combine(fixROH_version)
-		| combine(islands.snpislands_version)
+		| combine(topsnps_version)
+		| combine(island_version)
 
 	all_versions = version_info.mix(overlap_version)
 

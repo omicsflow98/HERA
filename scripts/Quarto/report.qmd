@@ -1,6 +1,5 @@
 ---
-title: "test demo"
-author: "Mohamad Elian"
+title: "HERA report"
 date: today
 execute: 
   echo: false
@@ -17,7 +16,7 @@ params:
   hom: true
   het: true
   substate: true
-  vcf: true
+  filetype: ''
   genestate: true
   type: ''
   minsnp: 0
@@ -30,7 +29,7 @@ params:
 hom <- params$hom
 het <- params$het
 substate <- params$substate
-vcfstate <- params$vcf
+filetype <- params$filetype
 genestate <- params$genestate
 type <- params$type
 minsnp <- params$minsnp
@@ -40,16 +39,24 @@ cutoff <- params$indiv
 <!--These are the files that will be sources -->
 ```{r load-everything}
 
-homfile <- "HOM_temp.tsv"
-hetfile <- "HET_temp.tsv"
-indiv_homfile <- "HOM.indiv"
-indiv_hetfile <- "HET.indiv"
-vcf_info <- "vcf_info.txt"
+if (filetype == "vcf") {
+  vcf_info <- "vcf_info.txt"
+}
 if (genestate) {
   bedfile <- "genes.bed"
 }
-HOMisland <- "HOM_topsnps.tsv"
-HETisland <- "HET_topsnps.tsv"
+if (hom) {
+  homfile <- "HOM_temp.tsv"
+  indiv_homfile <- "HOM.indiv"
+  if (filetype != "rohan") {
+    HOMisland <- "HOM_topsnps.tsv"
+  }
+}
+if (het) {
+  hetfile <- "HET_temp.tsv"
+  indiv_hetfile <- "HET.indiv"
+  HETisland <- "HET_topsnps.tsv"
+}
 
 source("test.R", local = knitr::knit_global())
 
@@ -64,7 +71,7 @@ cat(":::{.column-margin}\n\n")
 ```
 
 ```{r set-margins}
-#| eval: !expr vcfstate
+#| eval: !expr filetype == "vcf"
 #| results: asis
 
 cat("Input Information:\n\n")
@@ -140,21 +147,26 @@ if (het) {
 }
 
 if (hom && het) cat("\n:::\n\n")
-```
-Table caption
 
+if (hom && het) { cat("Longest ROH and HRR\n\n") } else
+if (hom) { cat("Longest ROH\n\n") } else
+if (het) { cat("Longest HRR\n\n") } 
+```
 :::
 
-This text references table @tbl-roh
-
-## Islands
-The below tables show the ROH and HRR islands as defined by the Chessari et al. In this context, an island is defined as an ROH/HRR which contains at least 4 of the top 0.1% of SNPs from the dataset. The islands are identified using the topsnp.py script, which takes in the counts of SNPs in ROH/HRR segments and identifies the top SNPs in either p-value or quantile mode. in this case `r type`
-
-::: {#tbl-island .mb-large}
-```{r tbl-island}
-#| eval: true
+```{r island-text}
+#| eval: !expr filetype != "rohan"
 #| results: asis
 
+cat("## Islands\n\nThe below tables show the ROH and HRR islands as defined by the Chessari et al. In this context, an island is defined as an ROH/HRR which contains at least 4 of the top 0.1% of SNPs from the dataset. The islands are identified using the topsnp.py script, which takes in the counts of SNPs in ROH/HRR segments and identifies the top SNPs in either p-value or quantile mode. in this case ",type,"\n\n")
+
+```
+
+```{r tbl-island}
+#| eval: !expr filetype != "rohan"
+#| results: asis
+
+cat("::: {#tbl-island .mb-large}\n\n")
 if (hom && het) {
   cat("::: {.panel-tabset}\n\n")
 }
@@ -175,18 +187,18 @@ if (het) {
   ))
 }
 
-if (hom && het) cat("\n:::\n\n")
+if (hom && het) {cat("\n:::\n\n")}
+
+if (hom && het) {cat("ROH and HRR islands\n\n")} else
+if (hom) {cat("ROH islands\n\n")} else
+if (het) {cat("HRR islands\n\n")}
+
+cat(":::")
 
 ```
-ROH and HRR islands
-
-:::
-
-This is the description of @tbl-island
-
 ## Two figures 
 
-This figure shows the length distribution and the numbe rof SNPs found in each ROH and/or HRR segment across the genome. 
+This figure shows the length distribution and the number of SNPs found in each ROH and/or HRR segment across the genome. To prevent the document from being too large, ROH and/or HRR were grouped together with their values averaged and represented by a single point. The number of ROH averaged for each point is denoted by K.
 
 ::: {#fig-dot .column-page}
 
@@ -208,11 +220,36 @@ make_plots <- function(df, xlab, kval) {
            yaxis = list(title = paste0("number of SNP (K = ", kval, ")")))
   
   print(htmltools::tagList(subplot(p1, p2, nrows = 1, shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE, margin = 0.04)))
+
+  if (hom) {
+    save_image(p = p1, file = "ROH_length.png")
+    save_image(p = p2, file = "ROH_snp.png")
+  } 
+  if (het) {
+    save_image(p = p1, file = "HRR_length.png")
+    save_image(p = p2, file = "HRR_snp.png")
+  }
+
+}
+
+make_plot <- function(df, kval) {
+
+  fig <- plot_ly(df, x = ~ROH_num, y = ~y1_kb, type = "scatter") %>%
+      layout(xaxis = list(title = "ROH number"),
+             yaxis = list(title = paste0("length KB (K = ", kval, ")")))
+  
+  print(htmltools::tagList(fig))
+
+  save_image(p = fig, file = "ROH_length.png")
 }
 
 if (hom) {
   if (hom && het) { cat("## ROH\n\n") }
-  make_plots(ROH_info_HOM, "ROH number", khom)
+  if (filetype == "rohan") {
+    make_plot(ROH_info_HOM, khom)
+  } else {
+    make_plots(ROH_info_HOM, "ROH number", khom)
+  }
 }
 
 if (het) {
@@ -225,8 +262,6 @@ if (hom && het) cat("\n:::\n\n")
 ```
 Length and number of ROH and/or HRR segments
 :::
-
-I am referencing @fig-dot. More specifically
 
 ```{r gene-text}
 #| eval: !expr genestate
@@ -264,7 +299,7 @@ if (het) {
 
 if (hom && het) cat("\n:::\n\n")
 
-cat("Gene table caption\n\n:::\n")
+cat("Genes intersected by ROH/HRR\n\n:::\n")
 ```
 
 ```{r geneplot-text}
@@ -286,11 +321,15 @@ if (hom && het) {
 }
 
 make_plot <- function(df, ylab) {
-  print(htmltools::tagList(
-    plot_ly(df, x = ~gene_count, y = ~n, type = "bar") %>%
+  
+  fig <- plot_ly(df, x = ~gene_count, y = ~n, type = "bar") %>%
       layout(xaxis = list(title = "number of Genes"),
              yaxis = list(title = ylab))
-  ))
+
+  print(htmltools::tagList(fig))
+
+  if (hom) { save_image(p = fig, file = "ROH_gene.png") }
+  if (het) { save_image(p = fig, file = "HRR_gene.png") }
 }
 
 if (hom) {
@@ -305,7 +344,7 @@ if (het) {
 
 if (hom && het) cat("\n:::\n\n")
 
-cat("nROH vs Genes\n\n:::\n\nThis is some comment, see @fig-roh\n")
+cat("nROH vs Genes\n\n:::\n\n")
 ```
 
 <!--The following codeblocks will run if subpopulations are being used -->
@@ -348,12 +387,16 @@ if (hom && het) {
 }
 
 make_plot <- function(df, ylab) {
-  print(htmltools::tagList(
-    plot_ly(df, x = ~groupings, y = ~NSEG,color = ~groupings,
+
+  fig <- plot_ly(df, x = ~groupings, y = ~NSEG,color = ~groupings,
             split = ~groupings, type = "box", box = list(
               visible = T), meanline = list(visible = T)) %>%
-      layout(xaxis = list(title = "subpopulation"), yaxis = list(title = ylab)))
-    )
+      layout(xaxis = list(title = "subpopulation"), yaxis = list(title = ylab))
+
+  print(htmltools::tagList(fig))
+
+  if (hom) { save_image(p = fig, file = "ROH_subpop.png") }
+  if (het) { save_image(p = fig, file = "HRR_subpop.png") }
 }
 
 
@@ -387,12 +430,16 @@ if (hom && het) {
 }
 
 make_plot <- function(df, ylab) {
-  print(htmltools::tagList(
-    plot_ly(df, x = ~groupings, y = ~KBAVG,color = ~groupings,
+
+  fig <- plot_ly(df, x = ~groupings, y = ~KBAVG,color = ~groupings,
             split = ~groupings, type = "box", box = list(
               visible = T), meanline = list(visible = T)) %>%
-      layout(xaxis = list(title = "subpopulation"), yaxis = list(title = ylab)))
-    )
+      layout(xaxis = list(title = "subpopulation"), yaxis = list(title = ylab))
+
+  print(htmltools::tagList(fig))
+
+  if (hom) { save_image(p = fig, file = "ROH_subpoplen.png") }
+  if (het) { save_image(p = fig, file = "HRR_subpoplen.png") }
 }
 
 

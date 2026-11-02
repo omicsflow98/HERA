@@ -8,7 +8,7 @@ library(DT)
 library(kableExtra)
 library(zoo)
 
-if (vcfstate) {
+if (filetype == "vcf") {
   side_info <- read.table(vcf_info, sep = "\t", fill = TRUE, header = TRUE)
 }
 
@@ -35,7 +35,7 @@ if (hom) {
   ROHfile <- read.table(homfile, sep = "\t", fill = TRUE, header = TRUE) %>%
     arrange(as.integer(sub("ROH_", "", ROH_ID)))
   
-  write.table(ROHfile, file = "HOM_combined.tsv", quote = FALSE, row.names = FALSE, sep = "\t")
+  write.table(ROHfile, file = "HOM_combined.out.tsv", quote = FALSE, row.names = FALSE, sep = "\t")
 
   indiv_HOM <- read.table(indiv_homfile, sep = "\t", fill = TRUE, header = TRUE) %>%
     rename(Sample = IID) %>%
@@ -43,11 +43,6 @@ if (hom) {
     rename(`Total ROH Length (KB)` = KB) %>%
     rename(`Average ROH Length (KB)` = KBAVG) %>%
     rename(FROH = FRR)
-
-  ROHislands <- read.table(HOMisland, sep = "\t", col.names = c("SNP", "CHR", "POS", "POS2", "count")) %>%
-    select(SNP, CHR, POS)
-
-  ROHislands$CHR <- as.character(ROHislands$CHR)
 
   prepHOMtable <- ROHfile %>%
     select(-c("PHOM", "PHET")) %>%
@@ -65,17 +60,25 @@ if (hom) {
 
   prepHOMtable$CHR <- as.character(prepHOMtable$CHR)
 
-  plot_ROHislands <- prepHOMtable %>%
-    filter(samples > cutoff) %>%
-    count_snps_in_regions(ROHislands) %>%
-    filter(snp_count >= as.integer(minsnp)) %>%
-    inner_join(prepHOMtable, by = c("CHR", "POS1", "POS2"))
+  if (filetype != "rohan") {
+    ROHislands <- read.table(HOMisland, sep = "\t", col.names = c("SNP", "CHR", "POS", "POS2", "count")) %>%
+      select(SNP, CHR, POS)
 
-  if (genestate) {
-    plot_ROHislands <- select(plot_ROHislands, ROH_ID, POS1, POS2, samples, CHR, KB, NSNP, genes)
-  } else {
-    plot_ROHislands <- select(plot_ROHislands, ROH_ID, POS1, POS2, samples, CHR, KB, NSNP)
+    ROHislands$CHR <- as.character(ROHislands$CHR)
+
+    plot_ROHislands <- prepHOMtable %>%
+      filter(samples > cutoff) %>%
+      count_snps_in_regions(ROHislands) %>%
+      filter(snp_count >= as.integer(minsnp)) %>%
+      inner_join(prepHOMtable, by = c("CHR", "POS1", "POS2"))
+
+    if (genestate) {
+      plot_ROHislands <- select(plot_ROHislands, ROH_ID, POS1, POS2, samples, CHR, KB, NSNP, genes)
+    } else {
+      plot_ROHislands <- select(plot_ROHislands, ROH_ID, POS1, POS2, samples, CHR, KB, NSNP)
+    }
   }
+
 
   plot_table_HOM <- prepHOMtable %>%
     slice_head(n = 500)
@@ -125,7 +128,7 @@ if (hom) {
       left_join(bedsubset, by = c("gene" = "gene_name")) %>%
       select(gene, CHR, START, END, ROHs, samples)
 
-    write.table(final_gene_ROH, file = "gene_ROH.tsv", quote = FALSE, row.names = FALSE, sep = "\t")
+    write.table(final_gene_ROH, file = "gene_ROH.out.tsv", quote = FALSE, row.names = FALSE, sep = "\t")
 
     final_ROH_count <- final_gene_ROH %>%
     mutate(
@@ -136,13 +139,15 @@ if (hom) {
     slice_head(n = 500)
   }
 
-ROH_info_HOM <- ROHfile %>%
+  ROH_info_HOM <- ROHfile %>%
     select(ROH_ID, KB, NSNP, DENSITY)
   
   khom<- max(1, round(0.01 * nrow(ROH_info_HOM)))
   ROH_info_HOM$y1_kb <- rollmean(ROH_info_HOM$KB, k = khom, fill = NA, align = "center")
-  ROH_info_HOM$y1_nsnp <- rollmean(ROH_info_HOM$NSNP, k = khom, fill = NA, align = "center")
-  ROH_info_HOM$y1_dens <- rollmean(1/ROH_info_HOM$DENSITY, k = khom, fill = NA, align = "center")
+  if (filetype != "rohan") {
+    ROH_info_HOM$y1_nsnp <- rollmean(ROH_info_HOM$NSNP, k = khom, fill = NA, align = "center")
+    ROH_info_HOM$y1_dens <- rollmean(1/ROH_info_HOM$DENSITY, k = khom, fill = NA, align = "center")
+  }
   ROH_info_HOM$ROH_num <- as.numeric(sub("ROH_", "", ROH_info_HOM$ROH_ID))
   x_labels <- c(ROH_info_HOM$ROH_num[1], ROH_info_HOM$ROH_num[nrow(ROH_info_HOM)])
 
@@ -152,7 +157,7 @@ if (het) {
   HRRfile <- read.table(hetfile, sep = "\t", fill = TRUE, header = TRUE) %>%
     arrange(as.integer(sub("HRR_", "", HRR_ID)))
   
-  write.table(HRRfile, file = "HET_combined.tsv", quote = FALSE, row.names = FALSE, sep = "\t")
+  write.table(HRRfile, file = "HET_combined.out.tsv", quote = FALSE, row.names = FALSE, sep = "\t")
 
   indiv_HET <- read.table(indiv_hetfile, sep = "\t", fill = TRUE, header = TRUE) %>%
     rename(Sample = IID) %>%
@@ -224,7 +229,7 @@ if (het) {
     gene_df_HRR <- HRRfile_long %>%
     group_by(genes) %>%
     summarize(
-      ROHs = paste(HRR_ID, collapse = ";"),
+      HRRs = paste(HRR_ID, collapse = ";"),
       samples = paste(samples, collapse = ";"),
       .groups = "drop"
     )  %>% 
@@ -237,19 +242,19 @@ if (het) {
       })
     ) %>%
     rename(gene = genes) %>%
-    select(gene, ROHs, samples)
+    select(gene, HRRs, samples)
 
     final_gene_HRR <- gene_df_HRR %>%
       left_join(bedsubset, by = c("gene" = "gene_name")) %>%
-      select(gene, CHR, START, END, ROHs, samples)
-    write.table(final_gene_HRR, file = "gene_HRR.tsv", quote = FALSE, row.names = FALSE, sep = "\t")
+      select(gene, CHR, START, END, HRRs, samples)
+    write.table(final_gene_HRR, file = "gene_HRR.out.tsv", quote = FALSE, row.names = FALSE, sep = "\t")
 
     final_HRR_count <- final_gene_HRR %>%
     mutate(
-      ROHs = str_count(ROHs, ";") + 1,
+      HRRs = str_count(HRRs, ";") + 1,
       samples = str_count(samples, ";") + 1
     ) %>%
-    select(gene, ROHs, samples, CHR, START, END) %>%
+    select(gene, HRRs, samples, CHR, START, END) %>%
     slice_head(n = 500)
   }
   

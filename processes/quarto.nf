@@ -3,7 +3,23 @@ process quarto {
 
         label 'quarto'
 
-        publishDir "${params.main.outdir}/output/quarto"
+        publishDir = [
+          [
+            path: "${params.main.outdir}/output/report",
+            mode: 'copy',
+            pattern: '*.zip'
+          ],
+          [
+            path: "${params.main.outdir}/output/report/figures",
+            mode: 'copy',
+            pattern: '*.png'
+          ],
+          [
+            path: "${params.main.outdir}/output/report/tables",
+            mode: 'copy',
+            pattern: '*.out.tsv'
+          ]
+        ]
 
         input:
         path(ROHall)
@@ -14,7 +30,7 @@ process quarto {
         val(homstate)
         val(hetstate)
         val(substate)
-        val(vcfstate)
+        val(filetype)
         val(genestate)
         path(subpop)
         path(bedfile)
@@ -22,8 +38,8 @@ process quarto {
 
         output:
         path("*.zip")
-        path("*combined.tsv")
-        path("gene_*")
+        path("*.out.tsv")
+        path("*.png")
         path("${task.process}_versions.yml"), emit: quarto_version
 
         script:
@@ -48,13 +64,13 @@ process quarto {
         -P hom:${homstate} \\
         -P het:${hetstate} \\
         -P substate:${substate} \\
-        -P vcf:${vcfstate} \\
+        -P filetype:${filetype} \\
         -P genestate:${genestate} \\
         -P type:${islandtype} \\
         -P minsnp:${minsnp} \\
         -P indiv:${indiv_count}
 
-        zip -r demo_files.zip demo.html demo_files
+        zip -r report.zip report.html report_files
 
         cat <<-EOF > ${task.process}_versions.yml
         Process version:

@@ -16,7 +16,7 @@ process plink {
         path("plink.hom"), emit: roh_file
         val(chrom), emit: chromosome
         tuple path("plink.map"), path("plink.ped"), emit: dr_files
-        path("${task.process}_versions.yml"), emit: plink_version
+        path("${task.process}_versions.yml"), emit: version
 
         script:
 
@@ -93,7 +93,7 @@ process plinkhet {
 
         output:
         tuple path("plink.map"), path("plink.ped"), emit: dr_files
-        path("${task.process}_versions.yml"), emit: plink_version
+        path("${task.process}_versions.yml"), emit: version
         val(chrom), emit: chromosome
 
         script:
