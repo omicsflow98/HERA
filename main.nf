@@ -110,7 +110,7 @@ workflow {
             
         infile = channel.value(
             tuple(
-                'plink',
+                params.inputfiles.filetype,
                 [],
                 bed,
                 bim,

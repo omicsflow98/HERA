@@ -25,7 +25,7 @@ process plink {
         def make_bed
         def stage = ""
 
-        if (type == 'VCF') {
+        if (type == 'vcf') {
           command = "--vcf ${vcf}"
           make_bed = true
         } else {

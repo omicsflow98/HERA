@@ -3,7 +3,7 @@ main:
   outdir: /Absolute/path/to/directory  # Output directory for the pipeline results
   apptainer: true  # Set to true if any of your processes require apptainer (singularity) containers
 
-# Input files can either be a well-filtered VCF file or plink output files (bed/bim/fam)
+# Input files can either be a well-filtered VCF file, plink output files (bed/bim/fam), or the directory containing the hmmrohl files from ROHan.
 inputfiles:
   filetype: vcf  # Set to either vcf, plink, or rohan
   file: /Absolute/Path/to/input/file # Path to the input file (.vcf file for VCF input, .bed/.bim/.fam file prefix for plink input, or the path to the directory containing the hmmrohl files outputted by ROHan)
@@ -18,26 +18,39 @@ slurm:
 apptainer:
   path: /Absolute/path/to/apptainer/containers # Path to directory containing apptainer containers
   bedops: bedops.sif # requirements: bedops
+  fixrohan: python3.sif # requirements: python with the following packages: argparse, yaml
   plink: plink.sif # requirements: plink
-  detectruns: null # requirements: detectRUNS
-  splitplink: null # requirements: python with the following packages: csv, argparse, yaml
-  overlap: python2.sif # requirements: python with the following packages: argparse, pyranges, pandas
+  detectruns: R.sif # requirements: detectRUNS
+  splitplink: python3.sif # requirements: python with the following packages: csv, argparse, yaml
+  overlap: python3.sif # requirements: python with the following packages: argparse, pyranges, pandas
   combineoverlap: null # requirements:NONE
   snpisland: gatk.sif # requirements: bedtools
-  topsnp: null # requirements: python with the following packages: argparse, pandas, yaml
-  splitROH: null # requirements: R with the following packages: tidyverse, optparse, yaml
-  fixROH: null # requirements:  R with the following packages: tidyverse, optparse, yaml
+  topsnp: python3.sif # requirements: python with the following packages: argparse, pandas, yaml
+  splitROH: R.sif # requirements: R with the following packages: tidyverse, optparse, yaml
+  fixROH: R.sif # requirements:  R with the following packages: tidyverse, optparse, yaml
   plots: null # requirements: NONE
   quarto: quarto.sif #requirements: quarto, R with the following packages: tidyverse, plotly, kableExtra, zoo, DT
   vcftools: vcftools.sif # requirements: vcftools
-  versions: null # requirements: python with the following packages: argparse, yaml, defaultdict
+  versions: python3.sif # requirements: python with the following packages: argparse, yaml, defaultdict
 
 #setting for bedops process
 bedops:
   resources:
     slurm:
+      memory: 4.GB
+      time: "1h"
+      cpus: 2
+    local:
       memory: 2.GB
-      time: "2h"
+      time: "1h"
+      cpus: 1
+
+#setting for fixrohan process
+fixrohan:
+  resources:
+    slurm:
+      memory: 4.GB
+      time: "1h"
       cpus: 2
     local:
       memory: 2.GB
@@ -48,8 +61,8 @@ bedops:
 quarto:
   resources:
     slurm:
-      memory: 6.GB
-      time: "2h"
+      memory: 16.GB
+      time: "12h"
       cpus: 2
     local:
       memory: 2.GB
@@ -60,7 +73,7 @@ quarto:
 version:
   resources:
     slurm:
-      memory: 2.GB
+      memory: 8.GB
       time: "2h"
       cpus: 2
     local:
@@ -72,8 +85,8 @@ version:
 vcftools:
   resources:
     slurm:
-      memory: 2.GB
-      time: "2h"
+      memory: 16.GB
+      time: "12h"
       cpus: 2
     local:
       memory: 2.GB

@@ -1,43 +1,44 @@
 settings:
  chromsfile: /Absolute/path/to/chromosomes.txt #file containing chromosome names
- genes: false # Set to true if you want to calculate gene metrics (requires gene file)
- genomelength : 2400 #in Mb
- homozygosity: false # Set to true if you want to calculate homozygosity
- heterozygosity: true # Set to true if you want to calculate heterozygosity
+ genes: false # 
+ genomelength : 2600 #in Mb
+ homozygosity: true # Set to true if you want to calculate homozygosity
+ heterozygosity: false # Set to true if you want to calculate heterozygosity
  subpopulations: false # Set to true if you want to calculate statistics for subpopulations (requires subpopulation file)
 
 # only needed if subpopulations is set to true
 subpopulation:
   subpop_file: /Absolute/path/to/subpopulation.tsv #file containing subpopulation information
 
-island:
-  type: quantile # method for defining islands (quantile or pvalue)
-  threshold: 0.9979 # threshold for defining islands (quantile or pvalue)
-  minSNP: 4 # minimum number of top SNPs in an island
-  indiv_count: 1 # minimum number of individuals required to have a SNP in an island for it to be considered an island
-
 #only needed if genes is set to true
 genes:
   file: absolute/path/to/gff3/or/gtf/or/bed/file #file containing gene information
+
+
+island:
+  type: pvalue # method for defining islands (quantile or pvalue)
+  threshold: 0.0001 # threshold for defining islands (quantile or pvalue)
+  minSNP: 4 # minimum number of top SNPs in an island
+  indiv_count: 1 # minimum number of individuals required to have a SNP in an island for it to be considered an island
 
 # settings for plink process
 plink:
   # Parameters for plink --homozyg command (https://www.cog-genomics.org/plink/1.9/ibd)
   parameters:
-    snp: 50 # min SNP count
+    snp: 76 # min SNP count
     kb: 1000 # min length
-    density: 50 # max inverse density (kb/SNP)
+    density: 150 # max inverse density (kb/SNP)
     gap: 1000 # max internal gap length (kb)
-    windowsnp: 50 # scanning window size
+    windowsnp: 76 # scanning window size
     WindowHet: 0 # max number of heterozygous calls allowed in scanning window
-    WindowMissing: 0 # max number of missing calls allowed in scanning window
-    WindowThreshold: 0.05 # minimum scanning window hit rate
+    WindowMissing: 1 # max number of missing calls allowed in scanning window
+    WindowThreshold: 0.039 # minimum scanning window hit rate
+    nosex: true # check if you want to allow for sex or not (default: true)
     HomozygHet: 0 # max hets
-    nosex: true
   resources:
     slurm:
-      memory: 2.GB
-      time: "2h"
+      memory: 16.GB
+      time: "6h"
       cpus: 2
     local:
       memory: 2.GB
@@ -51,16 +52,16 @@ detectruns:
     window: 10 # number of SNP in sliding window
     threshold: 0.05 # threshold of overlapping windows of same state to call a SNP
     minSNP: 10 # minimum number of SNPs in a HRR
-    maxhom: 3 # maximum number of HOM SNPs in a window
-    maxmissing: 2 # maximum number of missing SNPs in a window (optional)
+    maxhom: 0 # maximum number of HOM SNPs in a window
+    maxmissing: 0 # maximum number of missing SNPs in a window (optional)
     maxgap: 1000000 # maximum gap between two SNPs in a HRR
     minlength: 250000 # minimum length of a HRR
-    mindensity: 0.014 # minimum density of a HRR (SNPs/kb)
-    maxhomrun: 3 # maximum number of HOM SNPs in a run (optional)
+    mindensity: 0.00001 # minimum density of a HRR (SNPs/kb)
+    maxhomrun: 5 # maximum number of HOM SNPs in a run (optional)
   resources:
     slurm:
-      memory: 2.GB
-      time: "2h"
+      memory: 1.GB
+      time: "20m"
       cpus: 5
     local:
       memory: 2.GB
@@ -71,8 +72,8 @@ detectruns:
 splitplink:
   resources:
     slurm:
-      memory: 2.GB
-      time: "2h"
+      memory: 1.GB
+      time: "20m"
       cpus: 2
     local:
       memory: 2.GB
@@ -83,8 +84,8 @@ splitplink:
 overlap:
   resources:
     slurm:
-      memory: 2.GB
-      time: "2h"
+      memory: 1.GB
+      time: "20m"
       cpus: 6
     local:
       memory: 2.GB
@@ -95,8 +96,8 @@ overlap:
 combineoverlap:
   resources:
     slurm:
-      memory: 2.GB
-      time: "2h"
+      memory: 1.GB
+      time: "20m"
       cpus: 6
     local:
       memory: 2.GB
@@ -107,8 +108,8 @@ combineoverlap:
 snpisland:
   resources:
     slurm:
-      memory: 2.GB
-      time: "2h"
+      memory: 1.GB
+      time: "20m"
       cpus: 6
     local:
       memory: 2.GB
@@ -119,7 +120,7 @@ snpisland:
 topsnp:
   resources:
     slurm:
-      memory: 2.GB
+      memory: 16.GB
       time: "2h"
       cpus: 6
     local:
@@ -131,8 +132,8 @@ topsnp:
 splitROH:
   resources:
     slurm:
-      memory: 2.GB
-      time: "2h"
+      memory: 1.GB
+      time: "20m"
       cpus: 2
     local:
       memory: 2.GB
@@ -143,8 +144,8 @@ splitROH:
 fixROH:
   resources:
     slurm:
-      memory: 2.GB
-      time: "2h"
+      memory: 1.GB
+      time: "20m"
       cpus: 2
     local:
       memory: 2.GB
@@ -155,8 +156,8 @@ fixROH:
 plots:
   resources:
     slurm:
-      memory: 2.GB
-      time: "2h"
+      memory: 1.GB
+      time: "20m"
       cpus: 2
     local:
       memory: 2.GB
