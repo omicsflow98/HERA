@@ -61,7 +61,7 @@ workflow {
     quarto_files = channel.of(
     tuple(
         file("${projectDir}/scripts/Quarto/report.qmd"),
-        file("${projectDir}/scripts/Quarto/test.R"),
+        file("${projectDir}/scripts/Quarto/report.R"),
         file("${projectDir}/scripts/Quarto/subpopulations.R"),
         file("${projectDir}/scripts/Quarto/style.scss")
         )
