@@ -58,7 +58,7 @@ if (het) {
   HETisland <- "HET_topsnps.tsv"
 }
 
-source("test.R", local = knitr::knit_global())
+source("report.R", local = knitr::knit_global())
 
 ```
 
