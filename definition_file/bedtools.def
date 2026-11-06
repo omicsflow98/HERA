@@ -1,0 +1,59 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%arguments
+    BEDTOOLS_VERSION=2.31.1
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+
+    apt-get update
+    # Build dependencies (removed again after compiling) plus runtime libraries
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        wget \
+        build-essential \
+        python3 \
+        zlib1g-dev \
+        libbz2-dev \
+        liblzma-dev \
+        libbz2-1.0 \
+        liblzma5
+
+    # Build BEDTools from the official source release
+    cd /tmp
+    wget -q https://github.com/arq5x/bedtools2/releases/download/v{{ BEDTOOLS_VERSION }}/bedtools-{{ BEDTOOLS_VERSION }}.tar.gz
+    tar -xzf bedtools-{{ BEDTOOLS_VERSION }}.tar.gz
+    cd bedtools2
+    make -j"$(nproc)"
+    cp -L bin/bedtools /usr/local/bin/bedtools
+    chmod 755 /usr/local/bin/bedtools
+
+    # Clean up to keep the image small
+    cd /
+    rm -rf /tmp/bedtools2 /tmp/bedtools-{{ BEDTOOLS_VERSION }}.tar.gz
+    apt-get purge -y wget build-essential python3 zlib1g-dev libbz2-dev liblzma-dev
+    apt-get autoremove -y
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+%environment
+    export LC_ALL=C
+    export PATH=/usr/local/bin:$PATH
+
+%runscript
+    # Usage: apptainer run bedtools.sif intersect -a a.bed -b b.bed
+    exec bedtools "$@"
+
+%test
+    bedtools --version
+
+%labels
+    Tool BEDTools
+    Version {{ BEDTOOLS_VERSION }}
+
+%help
+    BEDTools genome arithmetic toolkit.
+
+        apptainer run  bedtools.sif intersect -a a.bed -b b.bed
+        apptainer exec bedtools.sif bedtools --help

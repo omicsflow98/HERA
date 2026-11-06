@@ -1,0 +1,39 @@
+Bootstrap: docker
+From: python:3.11.17-slim
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+
+    pip install --no-cache-dir --upgrade pip
+
+    # argparse, csv and collections.defaultdict are part of the Python
+    # standard library, so they need no installation.
+    # "yaml" is provided by the PyPI package PyYAML.
+    pip install --no-cache-dir \
+        pandas \
+        pyranges \
+        pyyaml
+
+%environment
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+    export PYTHONUNBUFFERED=1
+
+%runscript
+    # Usage: apptainer run python311_pyranges.sif script.py [args]
+    exec python "$@"
+
+%test
+    python --version | grep -q "3.11.17"
+    python -c "import argparse, csv, yaml, pandas, pyranges; from collections import defaultdict; print('pandas', pandas.__version__); print('pyranges', pyranges.__version__)"
+
+%labels
+    Python 3.11.17
+    Packages pandas pyranges pyyaml
+
+%help
+    Python 3.11.17 with pandas, pyranges and PyYAML.
+    argparse, csv and collections.defaultdict come from the standard library.
+
+        apptainer run  python311_pyranges.sif my_script.py --help
+        apptainer exec python311_pyranges.sif python -c "import pyranges"

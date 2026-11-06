@@ -1,0 +1,57 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%arguments
+    BEDOPS_VERSION=2.4.41
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+
+    apt-get update
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        wget \
+        bzip2
+    
+    # BEDOPS prebuilt static-ish binaries (linux x86_64)
+    # The tarball contains a top-level bin/ directory, so extracting into
+    # /usr/local places everything in /usr/local/bin (already on PATH).
+    cd /tmp
+    wget -q https://github.com/bedops/bedops/releases/download/v{{ BEDOPS_VERSION }}/bedops_linux_x86_64-v{{ BEDOPS_VERSION }}.tar.bz2
+    tar -xjf bedops_linux_x86_64-v{{ BEDOPS_VERSION }}.tar.bz2 -C /usr/local
+    rm -f bedops_linux_x86_64-v{{ BEDOPS_VERSION }}.tar.bz2
+
+    # Clean up to keep the image small
+    apt-get purge -y wget bzip2
+    apt-get autoremove -y
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+%environment
+    export LC_ALL=C
+    export PATH=/usr/local/bin:$PATH
+
+%runscript
+    # Usage: apptainer run bedops.sif <tool> [args]
+    # e.g.   apptainer run bedops.sif bedmap --echo --count a.bed b.bed
+    exec "$@"
+
+%test
+    bedops --version
+    bedmap --version
+    sort-bed --version
+    starch --version
+    convert2bed --version
+
+%labels
+    Tool BEDOPS
+    Version {{ BEDOPS_VERSION }}
+
+%help
+    BEDOPS genomic interval toolkit.
+    Includes bedops, bedmap, bedextract, sort-bed, starch, unstarch,
+    convert2bed, and the related helper tools.
+
+    Run a tool:
+        apptainer exec bedops.sif bedops --help
+        apptainer run  bedops.sif sort-bed input.bed > sorted.bed

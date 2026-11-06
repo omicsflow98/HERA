@@ -1,0 +1,38 @@
+Bootstrap: docker
+From: rocker/r-ver:4.4.1
+
+%post
+    # System libraries needed by tidyverse and detectRUNS dependencies
+    apt-get update && apt-get install -y --no-install-recommends \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        libxml2-dev \
+        libfontconfig1-dev \
+        libfreetype6-dev \
+        libharfbuzz-dev \
+        libfribidi-dev \
+        libpng-dev \
+        libjpeg-dev \
+        libtiff5-dev \
+        zlib1g-dev
+
+    # rocker/r-ver points to Posit Package Manager, so these install as prebuilt binaries
+    Rscript -e 'install.packages(c("tidyverse", "optparse", "yaml", "detectRUNS"), Ncpus = 4)'
+
+    # Clean up
+    rm -rf /var/lib/apt/lists/* /tmp/downloaded_packages /tmp/Rtmp*
+    apt-get clean
+
+%environment
+    export LC_ALL=en_US.UTF-8
+    export LANG=en_US.UTF-8
+
+%test
+    Rscript -e 'suppressMessages(library(detectRUNS)); suppressMessages(library(tidyverse)); suppressMessages(library(optparse)); suppressMessages(library(yaml)); cat("All R libraries loaded OK\n")'
+
+%labels
+    Description R env: detectRUNS, tidyverse, optparse, yaml
+
+%help
+    R 4.4.1 container with detectRUNS, tidyverse, optparse, and yaml.
+    Usage: singularity exec r_env.sif Rscript your_script.R [args]

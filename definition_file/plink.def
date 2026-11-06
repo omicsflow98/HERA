@@ -1,0 +1,54 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%arguments
+    # PLINK 1.9 stable build date (1.90b7.7 = 20241022)
+    PLINK_BUILD=20241022
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+
+    apt-get update
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        wget \
+        unzip \
+        zlib1g
+
+    # PLINK 1.9 prebuilt Linux x86_64 binary
+    mkdir -p /opt/plink
+    cd /tmp
+    wget -q https://s3.amazonaws.com/plink1-assets/plink_linux_x86_64_{{ PLINK_BUILD }}.zip
+    unzip -q plink_linux_x86_64_{{ PLINK_BUILD }}.zip -d /opt/plink
+    rm -f plink_linux_x86_64_{{ PLINK_BUILD }}.zip
+    chmod 755 /opt/plink/plink /opt/plink/prettify
+    ln -s /opt/plink/plink /usr/local/bin/plink
+    ln -s /opt/plink/prettify /usr/local/bin/prettify
+
+    # Clean up to keep the image small
+    apt-get purge -y wget unzip
+    apt-get autoremove -y
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+%environment
+    export LC_ALL=C
+    export PATH=/opt/plink:$PATH
+
+%runscript
+    # Usage: apptainer run plink.sif --bfile data --freq --out results
+    exec plink "$@"
+
+%test
+    plink --version
+
+%labels
+    Tool PLINK
+    Version 1.9
+    Build {{ PLINK_BUILD }}
+
+%help
+    PLINK 1.9 whole-genome association analysis toolset.
+
+        apptainer run  plink.sif --bfile data --freq --out results
+        apptainer exec plink.sif plink --version

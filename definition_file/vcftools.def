@@ -1,0 +1,37 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+
+    apt-get update
+    # The Ubuntu package provides the vcftools binary plus the perl helper
+    # tools (vcf-merge, vcf-sort, vcf-concat, etc.) and their perl module.
+    apt-get install -y --no-install-recommends \
+        vcftools
+
+    # Clean up to keep the image small
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+%environment
+    export LC_ALL=C
+    export PATH=/usr/bin:$PATH
+
+%runscript
+    # Usage: apptainer run vcftools.sif --vcf in.vcf --freq --out results
+    exec vcftools "$@"
+
+%test
+    vcftools --version
+    vcf-sort --help > /dev/null 2>&1 || true
+    command -v vcf-merge
+
+%labels
+    Tool VCFtools
+
+%help
+    VCFtools for working with VCF files.
+
+        apptainer run  vcftools.sif --vcf in.vcf --freq --out results
+        apptainer exec vcftools.sif vcf-merge --help

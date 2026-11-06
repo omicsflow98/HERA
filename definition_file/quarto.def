@@ -1,0 +1,61 @@
+Bootstrap: docker
+From: rocker/r-ver:4.4.2
+
+%labels
+    Description R + Quarto with dplyr, stringr, tidyr, plotly, DT, kableExtra, zoo, tibble
+
+%environment
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+    export PATH=/opt/quarto/bin:$PATH
+    export RETICULATE_PYTHON=/opt/venv/bin/python
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+    QUARTO_VERSION=1.6.40
+
+    # System libraries needed by kableExtra (systemfonts/svglite), plotly, DT, etc.
+    apt-get update && apt-get install -y --no-install-recommends \
+        curl ca-certificates gdebi-core \
+        libcurl4-openssl-dev libssl-dev libxml2-dev \
+        libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libfribidi-dev \
+        libpng-dev libtiff5-dev libjpeg-dev \
+        python3 python3-dev python3-venv python3-pip \
+        && rm -rf /var/lib/apt/lists/*
+
+    # Python venv for plotly::save_image() (R plotly calls kaleido through reticulate).
+    # R plotly needs the legacy kaleido 0.2.1 (bundles its own Chromium) and Python plotly < 6.
+    python3 -m venv /opt/venv
+    /opt/venv/bin/pip install --no-cache-dir "kaleido==0.2.1" "plotly<6"
+
+    # Install Quarto
+    curl -fsSL -o /tmp/quarto.deb \
+        https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.deb
+    apt-get update && apt-get install -y /tmp/quarto.deb
+    rm -f /tmp/quarto.deb
+    rm -rf /var/lib/apt/lists/*
+
+    # R packages (knitr/rmarkdown/jsonlite/htmlwidgets are needed for Quarto's knitr engine)
+    Rscript -e 'install.packages(c(
+        "knitr", "rmarkdown", "jsonlite", "htmlwidgets",
+        "dplyr", "stringr", "tidyr", "plotly", "DT",
+        "kableExtra", "zoo", "tibble", "reticulate"
+    ))'
+
+    # Fail the build if any package did not install
+    Rscript -e 'pkgs <- c("dplyr","stringr","tidyr","plotly","DT","kableExtra","zoo","tibble"); missing <- pkgs[!sapply(pkgs, requireNamespace, quietly = TRUE)]; if (length(missing)) stop("Missing: ", paste(missing, collapse = ", "))'
+
+%test
+    export RETICULATE_PYTHON=/opt/venv/bin/python
+    quarto --version
+    /opt/venv/bin/python -c "import kaleido, plotly; print('kaleido ok')"
+    Rscript -e 'library(reticulate); stopifnot(py_available(initialize = TRUE)); print(py_config())'
+    Rscript -e 'library(plotly); p <- plot_ly(x = 1:3, y = 1:3, type = "scatter", mode = "markers"); save_image(p, file.path(tempdir(), "t.png")); stopifnot(file.exists(file.path(tempdir(), "t.png")))'
+    Rscript -e 'library(dplyr); library(stringr); library(tidyr); library(plotly); library(DT); library(kableExtra); library(zoo); library(tibble)'
+
+%runscript
+    exec "$@"
+
+%help
+    R + Quarto container. Example:
+        apptainer exec quarto_r.sif quarto render report.qmd
